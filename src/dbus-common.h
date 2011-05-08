@@ -24,6 +24,6 @@ struct service_dbus_timeout_priv {
 	struct event ev_timeout;
 };
 
-int init_dbus_common(struct service_dbus_priv *priv);
+int init_dbus_with_event_loop(struct service_dbus_priv *priv);
 
 #endif /* end of include guard: _DBUS_COMMON_H_ */

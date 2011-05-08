@@ -9,7 +9,7 @@ int main(int argc, const char *argv[])
 
 	event_init();
 
-	init_dbus_common(&priv);
+	init_dbus_with_event_loop(&priv);
 
 	event_dispatch();
 	return 0;

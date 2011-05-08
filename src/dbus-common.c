@@ -212,7 +212,7 @@ static int integrate_with_event(struct service_dbus_priv *priv)
 	return 0;
 }
 
-int init_dbus_common(struct service_dbus_priv *priv)
+int init_dbus_with_event_loop(struct service_dbus_priv *priv)
 {
 	DBusError error;
 	int ret = 0;
