@@ -1,0 +1,3 @@
+I handled wakeup function just like what wpa_supplicant did. Used SIGPOLL to signal main loop to handle the incoming messages. 
+
+Alternative: Maybe I can create a timeout event in main loop when running wakeup function.
