@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <event.h>
 #include <signal.h>
 #include "dbus-common.h"
@@ -212,12 +214,45 @@ static int integrate_with_event(struct service_dbus_priv *priv)
 	return 0;
 }
 
+static void free_service_object_desc_cb(DBusConnection *con, void *user_data)
+{
+	struct service_dbus_object_desc *obj_desc = user_data;
+	if (!obj_desc)
+		return;
+	free(obj_desc->path);
+}
+
+static DBusHandlerResult message_handler(DBusConnection *con, DBusMessage *msg,
+		void *user_data)
+{
+	struct service_dbus_object_desc *obj_desc = user_data;
+	const char *path;
+	const char *msg_interface;
+	const char *method;
+
+	path = dbus_message_get_path(msg);
+	msg_interface = dbus_message_get_interface(msg);
+	method = dbus_message_get_member(msg);
+	if (!path || !msg_interface || !method)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	/* TODO: handle message call */
+
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
 int init_dbus_with_event_loop(struct service_dbus_priv *priv)
 {
 	DBusError error;
 	int ret = 0;
 	struct timeval delay;
+	struct service_dbus_object_desc *obj_desc;
+	DBusObjectPathVTable service_vtable = {
+		&free_service_object_desc_cb, &message_handler,
+		NULL, NULL, NULL, NULL
+	};
 
+	/* Get Bus */
 	dbus_error_init(&error);
 	priv->con = dbus_bus_get(DBUS_BUS_SESSION, &error);
 	if (!priv->con) {
@@ -228,6 +263,26 @@ int init_dbus_with_event_loop(struct service_dbus_priv *priv)
 	}
 	dbus_error_free(&error);
 
+	/* Reigster handler for object path */
+	obj_desc = dbus_malloc0(sizeof(struct service_dbus_object_desc));
+	obj_desc->connection = priv->con;
+	obj_desc->path = strdup(MY_DBUS_OBJECT_PATH);
+	if (!dbus_connection_register_object_path(priv->con, MY_DBUS_OBJECT_PATH,
+				&service_vtable, obj_desc)) {
+		fprintf(stderr, "dbus: Could not set up message handler.\n");
+		goto fail;
+	}
+
+	/* Request Bus name */
+	dbus_error_init(&error);
+	if (dbus_bus_request_name(priv->con, MY_DBUS_SERVICE_NAME, 0, &error) != 
+			DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+		fprintf(stderr, "dbus: Could not request service name.\n");
+		goto fail;
+	}
+	dbus_error_free(&error);
+
+	/* Integrate with libevent */
 	integrate_with_event(priv);
 
 	/*
