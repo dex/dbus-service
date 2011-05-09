@@ -18,21 +18,27 @@ have_dbus=no
 AC_SEARCH_LIBS([dbus_threads_init_default],[dbus-1],[have_dbus=yes])
 
 # Checks for header files.
+PKG_CHECK_MODULES([DBUS], [dbus-1 >= 1.4.0],[CPPFLAGS+=${DBUS_CFLAGS}])
+
+AC_CHECK_HEADERS([stdlib.h string.h])
 if test "x${have_event}" = xyes; then
 	AC_CHECK_HEADERS([event.h],[],[have_event=no])
-else 
+fi
+if test "x${have_event}" = xno; then
 	AC_MSG_ERROR([No event support])
 fi
 
 if test "x${have_dbus}" = xyes; then
 	AC_CHECK_HEADERS([dbus/dbus.h],[],[have_dbus=no])
-else 
+fi
+if test "x${have_dbus}" = xno; then
 	AC_MSG_ERROR([No dbus support])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 
 # Checks for library functions.
+AC_CHECK_FUNCS([strdup])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])
